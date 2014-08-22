@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/rmi.h>
 #include <linux/slab.h>
+#include <linux/of.h>
 #include "rmi_driver.h"
 
 #define BUFFER_SIZE_INCREMENT 32
@@ -183,18 +184,32 @@ static const struct rmi_transport_ops rmi_i2c_ops = {
 	.read_block	= rmi_i2c_read_block,
 };
 
+#ifdef CONFIG_OF
+static const struct of_device_id rmi_i2c_of_match[] = {
+	{ .compatible = "syna,rmi-i2c" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, rmi_i2c_of_match);
+#endif
+
 static int rmi_i2c_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
-	const struct rmi_device_platform_data *pdata =
-				dev_get_platdata(&client->dev);
+	struct rmi_device_platform_data *pdata;
+	struct rmi_device_platform_data *client_pdata =
+					dev_get_platdata(&client->dev);
 	struct rmi_i2c_xport *rmi_i2c;
 	int retval;
 
-	if (!pdata) {
-		dev_err(&client->dev, "no platform data\n");
-		return -EINVAL;
-	}
+	rmi_i2c = devm_kzalloc(&client->dev, sizeof(struct rmi_i2c_xport),
+				GFP_KERNEL);
+	if (!rmi_i2c)
+		return -ENOMEM;
+
+	pdata = &rmi_i2c->xport.pdata;
+
+	if (!client->dev.of_node)
+		*pdata = *client_pdata;
 
 	dev_dbg(&client->dev, "Probing %s at %#02x.\n",
 		pdata->sensor_name ? pdata->sensor_name : "-no name-",
@@ -205,11 +220,6 @@ static int rmi_i2c_probe(struct i2c_client *client,
 			"adapter does not support required functionality.\n");
 		return -ENODEV;
 	}
-
-	rmi_i2c = devm_kzalloc(&client->dev, sizeof(struct rmi_i2c_xport),
-				GFP_KERNEL);
-	if (!rmi_i2c)
-		return -ENOMEM;
 
 	rmi_i2c->client = client;
 	mutex_init(&rmi_i2c->page_mutex);
@@ -262,7 +272,8 @@ MODULE_DEVICE_TABLE(i2c, rmi_id);
 static struct i2c_driver rmi_i2c_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
-		.name	= "rmi_i2c"
+		.name	= "rmi_i2c",
+		.of_match_table = of_match_ptr(rmi_i2c_of_match),
 	},
 	.id_table	= rmi_id,
 	.probe		= rmi_i2c_probe,
