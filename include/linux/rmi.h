@@ -375,6 +375,9 @@ struct rmi_transport_dev {
 	struct rmi_device_platform_data pdata;
 
 	struct input_dev *input;
+
+	void *attn_data;
+	int attn_size;
 };
 
 /**
