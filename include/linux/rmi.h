@@ -118,6 +118,13 @@ struct rmi_f30_data {
 	bool disable;
 };
 
+/**
+ * struct rmi_f03_data - overrides defaults for a pass-through PS/2 device.
+ * @parent - a serio port which will be the parent of the instantiated port
+ */
+struct rmi_f03_data {
+	struct serio *parent;
+};
 
 /*
  * Set the state of a register
@@ -219,6 +226,7 @@ struct rmi_device_platform_data {
 	struct rmi_2d_sensor_platform_data *sensor_pdata;
 	struct rmi_f01_power_management power_management;
 	struct rmi_f30_data *f30_data;
+	struct rmi_f03_data *f03_data;
 };
 
 /**
