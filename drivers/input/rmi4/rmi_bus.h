@@ -19,7 +19,6 @@
 #include <linux/stat.h>
 #include <linux/types.h>
 #include <linux/wait.h>
-#include <linux/debugfs.h>
 #include <linux/rmi.h>
 
 struct rmi_device;
@@ -39,17 +38,12 @@ struct rmi_device;
  * @data: Private data pointer
  *
  * @node: entry in device's list of functions
- * @debugfs_root: used during debugging
  */
 struct rmi_function {
 	struct rmi_function_descriptor fd;
 	struct rmi_device *rmi_dev;
 	struct device dev;
 	struct list_head node;
-
-#ifdef CONFIG_RMI4_DEBUG
-	struct dentry *debugfs_root;
-#endif
 
 	unsigned int num_of_irqs;
 	unsigned int irq_pos;

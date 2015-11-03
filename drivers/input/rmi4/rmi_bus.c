@@ -15,14 +15,9 @@
 #include <linux/rmi.h>
 #include <linux/slab.h>
 #include <linux/types.h>
-#include <linux/debugfs.h>
 #include <linux/of.h>
 #include "rmi_bus.h"
 #include "rmi_driver.h"
-
-#ifdef CONFIG_RMI4_DEBUG
-static struct dentry *rmi_debugfs_root;
-#endif
 
 /*
  * RMI Physical devices
@@ -48,34 +43,6 @@ bool rmi_is_physical_device(struct device *dev)
 {
 	return dev->type == &rmi_device_type;
 }
-
-#ifdef CONFIG_RMI4_DEBUG
-
-static void rmi_physical_setup_debugfs(struct rmi_device *rmi_dev)
-{
-	rmi_dev->debugfs_root = debugfs_create_dir(dev_name(&rmi_dev->dev),
-						   rmi_debugfs_root);
-	if (!rmi_dev->debugfs_root)
-		dev_warn(&rmi_dev->dev, "Failed to create debugfs root.\n");
-}
-
-static void rmi_physical_teardown_debugfs(struct rmi_device *rmi_dev)
-{
-	if (rmi_dev->debugfs_root)
-		debugfs_remove_recursive(rmi_dev->debugfs_root);
-}
-
-#else
-
-static void rmi_physical_setup_debugfs(struct rmi_device *rmi_dev)
-{
-}
-
-static void rmi_physical_teardown_debugfs(struct rmi_device *rmi_dev)
-{
-}
-
-#endif
 
 /**
  * rmi_register_transport_device - register a transport device connection
@@ -107,8 +74,6 @@ int rmi_register_transport_device(struct rmi_transport_dev *xport)
 
 	xport->rmi_dev = rmi_dev;
 
-	rmi_physical_setup_debugfs(rmi_dev);
-
 	error = device_add(&rmi_dev->dev);
 	if (error)
 		goto err_put_device;
@@ -119,7 +84,6 @@ int rmi_register_transport_device(struct rmi_transport_dev *xport)
 	return 0;
 
 err_put_device:
-	rmi_physical_teardown_debugfs(rmi_dev);
 	put_device(&rmi_dev->dev);
 	return error;
 }
@@ -135,7 +99,6 @@ void rmi_unregister_transport_device(struct rmi_transport_dev *xport)
 	struct rmi_device *rmi_dev = xport->rmi_dev;
 
 	device_del(&rmi_dev->dev);
-	rmi_physical_teardown_debugfs(rmi_dev);
 	put_device(&rmi_dev->dev);
 }
 EXPORT_SYMBOL(rmi_unregister_transport_device);
@@ -159,37 +122,6 @@ bool rmi_is_function_device(struct device *dev)
 {
 	return dev->type == &rmi_function_type;
 }
-
-#ifdef CONFIG_RMI4_DEBUG
-
-static void rmi_function_setup_debugfs(struct rmi_function *fn)
-{
-	char dirname[12];
-
-	snprintf(dirname, sizeof(dirname), "F%02X", fn->fd.function_number);
-	fn->debugfs_root = debugfs_create_dir(dirname,
-					      fn->rmi_dev->debugfs_root);
-	if (!fn->debugfs_root)
-		dev_warn(&fn->dev, "Failed to create debugfs dir.\n");
-}
-
-static void rmi_function_teardown_debugfs(struct rmi_function *fn)
-{
-	if (fn->debugfs_root)
-		debugfs_remove_recursive(fn->debugfs_root);
-}
-
-#else
-
-static void rmi_function_setup_debugfs(struct rmi_function *fn)
-{
-}
-
-static void rmi_function_teardown_debugfs(struct rmi_function *fn)
-{
-}
-
-#endif
 
 static int rmi_function_match(struct device *dev, struct device_driver *drv)
 {
@@ -257,29 +189,26 @@ int rmi_register_function(struct rmi_function *fn)
 	fn->dev.type = &rmi_function_type;
 	fn->dev.bus = &rmi_bus_type;
 
-	rmi_function_setup_debugfs(fn);
-
 	error = device_add(&fn->dev);
 	if (error) {
 		dev_err(&rmi_dev->dev,
 			"Failed device_register function device %s\n",
 			dev_name(&fn->dev));
-		goto err_teardown_debugfs;
+		goto err_put_device;
 	}
 
 	dev_dbg(&rmi_dev->dev, "Registered F%02X.\n", fn->fd.function_number);
 
 	return 0;
 
-err_teardown_debugfs:
-	rmi_function_teardown_debugfs(fn);
+err_put_device:
+	put_device(&fn->dev);
 	return error;
 }
 
 void rmi_unregister_function(struct rmi_function *fn)
 {
 	device_del(&fn->dev);
-	rmi_function_teardown_debugfs(fn);
 
 	if (fn->dev.of_node)
 		of_node_put(fn->dev.of_node);
@@ -406,34 +335,6 @@ int rmi_of_property_read_u8(struct device *dev, u8 *result,
 }
 EXPORT_SYMBOL_GPL(rmi_of_property_read_u8);
 
-#ifdef CONFIG_RMI4_DEBUG
-
-static void rmi_bus_setup_debugfs(void)
-{
-	rmi_debugfs_root = debugfs_create_dir(rmi_bus_type.name, NULL);
-	if (!rmi_debugfs_root)
-		pr_err("%s: Failed to create debugfs root\n",
-		       __func__);
-}
-
-static void rmi_bus_teardown_debugfs(void)
-{
-	if (rmi_debugfs_root)
-		debugfs_remove_recursive(rmi_debugfs_root);
-}
-
-#else
-
-static void rmi_bus_setup_debugfs(void)
-{
-}
-
-static void rmi_bus_teardown_debugfs(void)
-{
-}
-
-#endif
-
 static int __init rmi_bus_init(void)
 {
 	int error;
@@ -444,8 +345,6 @@ static int __init rmi_bus_init(void)
 			__func__, error);
 		return error;
 	}
-
-	rmi_bus_setup_debugfs();
 
 	error = rmi_register_f01_handler();
 	if (error) {
@@ -475,7 +374,6 @@ err_unregister_f11:
 err_unregister_f01:
 	rmi_unregister_f01_handler();
 err_unregister_bus:
-	rmi_bus_teardown_debugfs();
 	bus_unregister(&rmi_bus_type);
 	return error;
 }
@@ -491,7 +389,6 @@ static void __exit rmi_bus_exit(void)
 	rmi_unregister_physical_driver();
 	rmi_unregister_f11_handler();
 	rmi_unregister_f01_handler();
-	rmi_bus_teardown_debugfs();
 	bus_unregister(&rmi_bus_type);
 }
 module_exit(rmi_bus_exit);
