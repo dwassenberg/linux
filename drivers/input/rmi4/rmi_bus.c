@@ -66,7 +66,7 @@ int rmi_register_transport_device(struct rmi_transport_dev *xport)
 	rmi_dev->xport = xport;
 	rmi_dev->number = atomic_inc_return(&transport_device_count) - 1;
 
-	dev_set_name(&rmi_dev->dev, "sensor%02d", rmi_dev->number);
+	dev_set_name(&rmi_dev->dev, "rmi%02d", rmi_dev->number);
 
 	rmi_dev->dev.bus = &rmi_bus_type;
 	rmi_dev->dev.type = &rmi_device_type;
