@@ -54,7 +54,6 @@ bool rmi_is_physical_device(struct device *dev)
 int rmi_register_transport_device(struct rmi_transport_dev *xport)
 {
 	static atomic_t transport_device_count = ATOMIC_INIT(0);
-	struct rmi_device_platform_data *pdata = &xport->pdata;
 	struct rmi_device *rmi_dev;
 	int error;
 
@@ -79,7 +78,7 @@ int rmi_register_transport_device(struct rmi_transport_dev *xport)
 		goto err_put_device;
 
 	dev_dbg(xport->dev, "%s: Registered %s as %s.\n", __func__,
-		pdata->sensor_name, dev_name(&rmi_dev->dev));
+		dev_name(rmi_dev->xport->dev), dev_name(&rmi_dev->dev));
 
 	return 0;
 

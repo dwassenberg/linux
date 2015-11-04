@@ -211,10 +211,7 @@ static int rmi_i2c_probe(struct i2c_client *client,
 	if (!client->dev.of_node)
 		*pdata = *client_pdata;
 
-	dev_dbg(&client->dev, "Probing %s at %#02x.\n",
-		pdata->sensor_name ? pdata->sensor_name : "-no name-",
-		client->addr);
-
+	dev_dbg(&client->dev, "Probing %s.\n", dev_name(&client->dev));
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(&client->dev,
 			"adapter does not support required functionality.\n");

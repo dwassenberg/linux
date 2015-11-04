@@ -1038,8 +1038,7 @@ static int rmi_f11_initialize(struct rmi_function *fn)
 	u8 buf;
 	int mask_size;
 
-	dev_dbg(&fn->dev, "Initializing F11 values for %s.\n",
-		 pdata->sensor_name);
+	dev_dbg(&fn->dev, "Initializing F11 values.\n");
 
 	mask_size = BITS_TO_LONGS(drvdata->irq_count) * sizeof(unsigned long);
 

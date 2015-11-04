@@ -819,14 +819,12 @@ static int rmi_create_function(struct rmi_device *rmi_dev,
 {
 	struct device *dev = &rmi_dev->dev;
 	struct rmi_driver_data *data = dev_get_drvdata(&rmi_dev->dev);
-	const struct rmi_device_platform_data *pdata = rmi_get_platform_data(rmi_dev);
 	int *current_irq_count = ctx;
 	struct rmi_function *fn;
 	int i;
 	int error;
 
-	dev_dbg(dev, "Initializing F%02X for %s.\n",
-		pdt->function_number, pdata->sensor_name);
+	dev_dbg(dev, "Initializing F%02X.\n", pdt->function_number);
 
 	fn = kzalloc(sizeof(struct rmi_function) +
 			BITS_TO_LONGS(data->irq_count) * sizeof(unsigned long),
@@ -1058,8 +1056,7 @@ static int rmi_driver_probe(struct device *dev)
 	irq_count = 0;
 	retval = rmi_scan_pdt(rmi_dev, &irq_count, rmi_count_irqs);
 	if (retval < 0) {
-		dev_err(dev, "IRQ counting for %s failed with code %d.\n",
-			pdata->sensor_name, retval);
+		dev_err(dev, "IRQ counting failed with code %d.\n", retval);
 		goto err_free_mem;
 	}
 	data->irq_count = irq_count;
