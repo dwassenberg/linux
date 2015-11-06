@@ -1209,27 +1209,18 @@ static int rmi_f11_initialize(struct rmi_function *fn)
 		return -ENOMEM;
 
 	ctrl = &f11->dev_controls;
-	if (sensor->axis_align.delta_x_threshold) {
+	if (sensor->axis_align.delta_x_threshold)
 		ctrl->ctrl0_9[RMI_F11_DELTA_X_THRESHOLD] =
 			sensor->axis_align.delta_x_threshold;
-		rc = rmi_write_block(rmi_dev, ctrl->ctrl0_9_address,
-				ctrl->ctrl0_9,
-				RMI_F11_CTRL_REG_COUNT);
-		if (rc < 0)
-			dev_warn(&fn->dev, "Failed to write to delta_x_threshold. Code: %d.\n",
-				rc);
 
-	}
-
-	if (sensor->axis_align.delta_y_threshold) {
+	if (sensor->axis_align.delta_y_threshold)
 		ctrl->ctrl0_9[RMI_F11_DELTA_Y_THRESHOLD] =
 			sensor->axis_align.delta_y_threshold;
-		rc = rmi_write_block(rmi_dev, ctrl->ctrl0_9_address,
-				ctrl->ctrl0_9, RMI_F11_CTRL_REG_COUNT);
-		if (rc < 0)
-			dev_warn(&fn->dev, "Failed to write to delta_y_threshold. Code: %d.\n",
-				rc);
-	}
+
+	rc = f11_write_control_regs(fn, &f11->sens_query,
+			   &f11->dev_controls, fn->fd.query_base_addr);
+	if (rc)
+		dev_warn(&fn->dev, "Failed to write control registers\n");
 
 	mutex_init(&f11->dev_controls_mutex);
 
