@@ -931,8 +931,6 @@ static int rmi_driver_remove(struct device *dev)
 	struct rmi_device *rmi_dev = to_rmi_device(dev);
 	struct rmi_driver_data *data = dev_get_drvdata(&rmi_dev->dev);
 
-	if (data->input)
-		input_unregister_device(data->input);
 	disable_sensor(rmi_dev);
 	rmi_free_function_list(rmi_dev);
 
@@ -1076,13 +1074,21 @@ static int rmi_driver_probe(struct device *dev)
 	data->current_irq_mask	= irq_memory + size * 2;
 	data->new_irq_mask	= irq_memory + size * 3;
 
-	if (pdata->unified_input) {
-		data->input = input_allocate_device();
-		if (data->input) {
-			rmi_driver_set_input_params(rmi_dev, data->input);
-			sprintf(data->input_phys, "%s/input0", dev_name(dev));
-			data->input->phys = data->input_phys;
-		}
+	if (rmi_dev->xport->input) {
+		/*
+		 * The transport driver already has an input device.
+		 * In some cases it is preferable to reuse the transport
+		 * devices input device instead of creating a new one here.
+		 * One example is some HID touchpads report "pass-through"
+		 * button events not handled by the rmi driver.
+		 */
+		data->input = rmi_dev->xport->input;
+		pdata->unified_input = true;
+	} else if (pdata->unified_input) {
+		data->input = devm_input_allocate_device(dev);
+		rmi_driver_set_input_params(rmi_dev, data->input);
+		data->input->phys = devm_kasprintf(dev, GFP_KERNEL,
+						"%s/input0", dev_name(dev));
 	}
 
 	irq_count = 0;
@@ -1121,10 +1127,12 @@ static int rmi_driver_probe(struct device *dev)
 
 	if (data->input) {
 		rmi_driver_set_input_name(rmi_dev, data->input);
-		if (input_register_device(data->input)) {
-			dev_err(dev, "%s: Failed to register input device.\n",
-				__func__);
-			goto err_destroy_functions;
+		if (!rmi_dev->xport->input) {
+			if (input_register_device(data->input)) {
+				dev_err(dev, "%s: Failed to register input device.\n",
+					__func__);
+				goto err_destroy_functions;
+			}
 		}
 	}
 
@@ -1146,7 +1154,6 @@ static int rmi_driver_probe(struct device *dev)
 	return 0;
 
 err_destroy_functions:
-	input_free_device(data->input);
 	rmi_free_function_list(rmi_dev);
 	kfree(irq_memory);
 err_free_mem:
