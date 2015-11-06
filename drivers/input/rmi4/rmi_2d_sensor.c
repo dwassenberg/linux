@@ -360,7 +360,6 @@ int rmi_2d_sensor_of_probe(struct device *dev,
 }
 #else
 inline int rmi_2d_sensor_of_probe(struct device *dev,
-				struct rmi_2d_sensor *sensor,
 				struct rmi_2d_sensor_platform_data *pdata)
 {
 	return -ENODEV;
