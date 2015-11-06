@@ -1217,6 +1217,9 @@ static int rmi_f11_initialize(struct rmi_function *fn)
 		ctrl->ctrl0_9[RMI_F11_DELTA_Y_THRESHOLD] =
 			sensor->axis_align.delta_y_threshold;
 
+	if (f11->sens_query.has_dribble)
+		ctrl->ctrl0_9[0] = ctrl->ctrl0_9[0] & ~BIT(6);
+
 	rc = f11_write_control_regs(fn, &f11->sens_query,
 			   &f11->dev_controls, fn->fd.query_base_addr);
 	if (rc)
