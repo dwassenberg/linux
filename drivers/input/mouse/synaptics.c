@@ -248,8 +248,8 @@ static const char * const smbus_pnp_ids[] = {
 	"LEN200f", /* T450s */
 };
 
-static struct rmi_f11_sensor_data rmi_smbus_f11_sensor_data = {
-	.sensor_type = rmi_f11_sensor_touchpad,
+static struct rmi_2d_sensor_platform_data rmi_smbus_2d_sensor_data = {
+	.sensor_type = rmi_sensor_touchpad,
 	.axis_align.flip_y = true,
 	.kernel_tracking = true, /* to prevent cursors jumps */
 };
@@ -258,9 +258,7 @@ static struct rmi_f30_data rmi_smbus_f30_data = {
 };
 
 static struct rmi_device_platform_data rmi_smbus_pdata = {
-	.sensor_name = "Synaptics SMBus",
-	.attn_gpio = RMI_CUSTOM_IRQ,
-	.f11_sensor_data = &rmi_smbus_f11_sensor_data,
+	.sensor_pdata = &rmi_smbus_2d_sensor_data,
 	.f30_data = &rmi_smbus_f30_data,
 	.unified_input = true,
 };
@@ -355,7 +353,7 @@ static int synaptics_setup_intertouch(struct psmouse *psmouse)
 
 	if (psmouse_matches_pnp_id(psmouse, topbuttonpad_pnp_ids) &&
 	    !SYN_CAP_EXT_BUTTONS_STICK(priv->ext_cap_10))
-		rmi_smbus_f11_sensor_data.topbuttonpad = true;
+		rmi_smbus_2d_sensor_data.topbuttonpad = true;
 
 	rmi_smbus_f30_data.trackstick_buttons =
 				!!SYN_CAP_EXT_BUTTONS_STICK(priv->ext_cap_10);
