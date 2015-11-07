@@ -9,7 +9,6 @@
 
 #include <linux/kernel.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
 #include <linux/kconfig.h>
@@ -337,31 +336,21 @@ static int rmi_smb_probe(struct i2c_client *client,
 		return -ENOMEM;
 	}
 
-	dev_dbg(&client->dev, "Probing %s at %#02x (GPIO %d).\n",
-		pdata->sensor_name ? pdata->sensor_name : "-no name-",
-		client->addr, pdata->attn_gpio);
-
-	if (pdata->gpio_config) {
-		retval = pdata->gpio_config(pdata->gpio_data, true);
-		if (retval < 0) {
-			dev_err(&client->dev, "Failed to configure GPIOs, code: %d.\n",
-				retval);
-			return retval;
-		}
-	}
+	dev_dbg(&client->dev, "Probing %s.\n", dev_name(&client->dev));
 
 	rmi_smb->client = client;
 	mutex_init(&rmi_smb->page_mutex);
 	mutex_init(&rmi_smb->mappingtable_mutex);
 
 	rmi_smb->xport.dev = &client->dev;
+	rmi_smb->xport.pdata = *pdata;
 	rmi_smb->xport.proto_name = "smb2";
 	rmi_smb->xport.ops = &rmi_smb_ops;
 
 	/* Check if for SMBus new version device by reading version byte. */
 	retval = rmi_smb_get_version(rmi_smb);
 	if (retval < 0)
-		goto err_gpio;
+		return retval;
 
 	smbus_version = retval;
 	dev_dbg(&client->dev, "Smbus version is %d", smbus_version);
@@ -369,15 +358,14 @@ static int rmi_smb_probe(struct i2c_client *client,
 	if (smbus_version != 2) {
 		dev_err(&client->dev, "Unrecognized SMB version %d.\n",
 				smbus_version);
-		retval = -ENODEV;
-		goto err_gpio;
+		return -ENODEV;
 	}
 
 	retval = rmi_register_transport_device(&rmi_smb->xport);
 	if (retval) {
 		dev_err(&client->dev, "Failed to register transport driver at 0x%.2X.\n",
 			client->addr);
-		goto err_gpio;
+		return retval;
 	}
 
 	i2c_set_clientdata(client, rmi_smb);
@@ -386,23 +374,13 @@ static int rmi_smb_probe(struct i2c_client *client,
 			client->addr);
 	return 0;
 
-err_gpio:
-	if (pdata->gpio_config)
-		pdata->gpio_config(pdata->gpio_data, false);
-
-	return retval;
 }
 
 static int rmi_smb_remove(struct i2c_client *client)
 {
-	const struct rmi_device_platform_data *pdata =
-				dev_get_platdata(&client->dev);
 	struct rmi_smb_xport *rmi_smb = i2c_get_clientdata(client);
 
 	rmi_unregister_transport_device(&rmi_smb->xport);
-
-	if (pdata && pdata->gpio_config)
-		pdata->gpio_config(pdata->gpio_data, false);
 
 	return 0;
 }
