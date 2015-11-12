@@ -61,7 +61,6 @@ struct rmi_2d_sensor {
 	bool topbuttonpad;
 	enum rmi_sensor_type sensor_type;
 	struct input_dev *input;
-	bool unified_input;
 	struct rmi_function *fn;
 	char input_phys[32];
 	u8 report_abs;
