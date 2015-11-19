@@ -211,6 +211,8 @@ static int rmi_f01_of_probe(struct device *dev,
 	if (retval)
 		return retval;
 
+	pdata->power_management.doze_interval = val / 10;
+
 	return 0;
 }
 #else
