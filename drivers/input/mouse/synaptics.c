@@ -260,7 +260,6 @@ static struct rmi_f30_data rmi_smbus_f30_data = {
 static struct rmi_device_platform_data rmi_smbus_pdata = {
 	.sensor_pdata = &rmi_smbus_2d_sensor_data,
 	.f30_data = &rmi_smbus_f30_data,
-	.unified_input = true,
 };
 
 static void synaptics_create_intertouch(struct i2c_adapter *adap)
