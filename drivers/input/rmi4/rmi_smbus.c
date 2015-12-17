@@ -70,12 +70,6 @@ static int smb_block_write(struct rmi_transport_dev *xport,
 		"wrote %zd bytes at %#04x: %d (%*ph)\n",
 		len, commandcode, retval, (int)len, buf);
 
-	xport->stats.tx_count++;
-	if (retval)
-		xport->stats.tx_errs++;
-	else
-		xport->stats.tx_bytes += len;
-
 	return retval;
 }
 
@@ -190,12 +184,8 @@ static int smb_block_read(struct rmi_transport_dev *xport,
 	int retval;
 
 	retval = i2c_smbus_read_block_data(client, commandcode, buf);
-	xport->stats.rx_count++;
-	xport->stats.rx_bytes += len;
-	if (retval < 0) {
-		xport->stats.rx_errs++;
+	if (retval < 0)
 		return retval;
-	}
 
 	return retval;
 }
