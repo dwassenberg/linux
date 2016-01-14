@@ -270,7 +270,7 @@ static void synaptics_create_intertouch(struct i2c_adapter *adap)
 		memset(&info, 0, sizeof(struct i2c_board_info));
 		info.addr = 0x2c;
 		info.platform_data = &rmi_smbus_pdata;
-		strlcpy(info.type, "rmi_smbus", I2C_NAME_SIZE);
+		strlcpy(info.type, "rmi4_smbus", I2C_NAME_SIZE);
 		synaptics_smbus_client = i2c_new_device(adap, &info);
 	}
 }
