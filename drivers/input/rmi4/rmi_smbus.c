@@ -66,7 +66,7 @@ static int smb_block_write(struct rmi_transport_dev *xport,
 
 	retval = i2c_smbus_write_block_data(client, commandcode, len, buf);
 
-	dev_dbg(&client->dev,
+	rmi_dbg(RMI_DEBUG_XPORT, &client->dev,
 		"wrote %zd bytes at %#04x: %d (%*ph)\n",
 		len, commandcode, retval, (int)len, buf);
 
@@ -310,7 +310,8 @@ static int rmi_smb_probe(struct i2c_client *client,
 		return -ENOMEM;
 	}
 
-	dev_dbg(&client->dev, "Probing %s.\n", dev_name(&client->dev));
+	rmi_dbg(RMI_DEBUG_XPORT, &client->dev, "Probing %s.\n",
+		dev_name(&client->dev));
 
 	rmi_smb->client = client;
 	mutex_init(&rmi_smb->page_mutex);
@@ -327,7 +328,8 @@ static int rmi_smb_probe(struct i2c_client *client,
 		return retval;
 
 	smbus_version = retval;
-	dev_dbg(&client->dev, "Smbus version is %d", smbus_version);
+	rmi_dbg(RMI_DEBUG_XPORT, &client->dev, "Smbus version is %d",
+		smbus_version);
 
 	if (smbus_version != 2) {
 		dev_err(&client->dev, "Unrecognized SMB version %d.\n",
@@ -372,7 +374,7 @@ static int rmi_smb_resume(struct device *dev)
 }
 
 static const struct i2c_device_id rmi_id[] = {
-	{ "rmi_smbus", 0 },
+	{ "rmi4_smbus", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, rmi_id);
@@ -380,7 +382,7 @@ MODULE_DEVICE_TABLE(i2c, rmi_id);
 static struct i2c_driver rmi_smb_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
-		.name	= "rmi_smbus",
+		.name	= "rmi4_smbus",
 		.resume	= rmi_smb_resume,
 	},
 	.id_table	= rmi_id,
