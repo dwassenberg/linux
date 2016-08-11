@@ -181,7 +181,7 @@ static inline int rmi_f03_register_pt(struct rmi_function *fn)
 
 	bus_register_notifier(&serio_bus, &f03->serio_notifier_block);
 
-	serio_register_port(serio);
+	serio_register_port_sync(serio);
 
 	return 0;
 }
