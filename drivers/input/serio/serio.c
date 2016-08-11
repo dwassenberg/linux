@@ -757,6 +757,19 @@ void __serio_register_port(struct serio *serio, struct module *owner)
 EXPORT_SYMBOL(__serio_register_port);
 
 /*
+ * Submits register request to kseriod for subsequent execution.
+ * In this case port registration is synchronous.
+ */
+void __serio_register_port_sync(struct serio *serio, struct module *owner)
+{
+	serio_init_port(serio);
+	mutex_lock(&serio_mutex);
+	serio_add_port(serio);
+	mutex_unlock(&serio_mutex);
+}
+EXPORT_SYMBOL(__serio_register_port_sync);
+
+/*
  * Synchronously unregisters serio port.
  */
 void serio_unregister_port(struct serio *serio)

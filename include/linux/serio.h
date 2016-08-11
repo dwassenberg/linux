@@ -79,10 +79,14 @@ irqreturn_t serio_interrupt(struct serio *serio, unsigned char data, unsigned in
 bool serio_matches_pnp_id(struct serio *serio, const char * const ids[]);
 
 void __serio_register_port(struct serio *serio, struct module *owner);
+void __serio_register_port_sync(struct serio *serio, struct module *owner);
 
 /* use a define to avoid include chaining to get THIS_MODULE */
 #define serio_register_port(serio) \
 	__serio_register_port(serio, THIS_MODULE)
+
+#define serio_register_port_sync(serio) \
+	__serio_register_port_sync(serio, THIS_MODULE)
 
 void serio_unregister_port(struct serio *serio);
 void serio_unregister_child_port(struct serio *serio);
