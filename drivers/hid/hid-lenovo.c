@@ -21,11 +21,19 @@
 #include <linux/sysfs.h>
 #include <linux/device.h>
 #include <linux/hid.h>
+#include <linux/hid-lenovo.h>
 #include <linux/input.h>
 #include <linux/leds.h>
 #include <linux/usb.h>
 
 #include "hid-ids.h"
+
+struct led_table_entry {
+	struct led_classdev *dev;
+	uint8_t state;
+};
+
+static struct led_table_entry hid_lenovo_led_table[HID_LENOVO_LED_MAX];
 
 struct lenovo_drvdata_tpkbd {
 	int led_state;
@@ -53,6 +61,28 @@ struct lenovo_drvdata_tpx1cover {
 	struct led_classdev led_micmute;
 	struct led_classdev led_fnlock;
 };
+
+int hid_lenovo_led_set(int led_num, bool on)
+{
+	struct led_classdev *dev;
+
+	if (led_num >= HID_LENOVO_LED_MAX)
+		return -EINVAL;
+
+	dev = hid_lenovo_led_table[led_num].dev;
+	hid_lenovo_led_table[led_num].state = on;
+
+	if (!dev)
+		return -ENODEV;
+
+	if (!dev->brightness_set)
+		return -ENODEV;
+
+	dev->brightness_set(dev, on ? LED_FULL : LED_OFF);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(hid_lenovo_led_set);
 
 #define map_key_clear(c) hid_map_usage_clear(hi, usage, bit, max, EV_KEY, (c))
 
@@ -1034,6 +1064,7 @@ static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 	drv_data->led_mute.brightness_get = lenovo_led_brightness_get_tpx1cover;
 	drv_data->led_mute.brightness_set = lenovo_led_brightness_set_tpx1cover;
 	drv_data->led_mute.dev = dev;
+	hid_lenovo_led_table[HID_LENOVO_LED_MUTE].dev = &drv_data->led_mute;
 	led_classdev_register(dev, &drv_data->led_mute);
 
 
@@ -1050,6 +1081,7 @@ static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 	drv_data->led_micmute.brightness_get = lenovo_led_brightness_get_tpx1cover;
 	drv_data->led_micmute.brightness_set = lenovo_led_brightness_set_tpx1cover;
 	drv_data->led_micmute.dev = dev;
+	hid_lenovo_led_table[HID_LENOVO_LED_MICMUTE].dev = &drv_data->led_micmute;
 	led_classdev_register(dev, &drv_data->led_micmute);
 
 
@@ -1067,6 +1099,7 @@ static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 	drv_data->led_fnlock.brightness_get = lenovo_led_brightness_get_tpx1cover;
 	drv_data->led_fnlock.brightness_set = lenovo_led_brightness_set_tpx1cover;
 	drv_data->led_fnlock.dev = dev;
+	hid_lenovo_led_table[HID_LENOVO_LED_FNLOCK].dev = &drv_data->led_fnlock;
 	led_classdev_register(dev, &drv_data->led_fnlock);
 
 	drv_data->led_state = 0;
@@ -1075,6 +1108,10 @@ static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 
 	hid_set_drvdata(hdev, drv_data);
 
+	lenovo_led_brightness_set_tpx1cover(&drv_data->led_mute,
+		hid_lenovo_led_table[HID_LENOVO_LED_MUTE].state ? LED_FULL : LED_OFF);
+	lenovo_led_brightness_set_tpx1cover(&drv_data->led_micmute,
+		hid_lenovo_led_table[HID_LENOVO_LED_MICMUTE].state ? LED_FULL : LED_OFF);
 	lenovo_led_brightness_set_tpx1cover(&drv_data->led_fnlock, LED_FULL);
 
 	return 0;
@@ -1269,16 +1306,22 @@ static void lenovo_remove_tpx1cover(struct hid_device *hdev)
 
 	if (drv_data->led_present) {
 		if (drv_data->led_fnlock.name) {
+			hid_lenovo_led_table[HID_LENOVO_LED_FNLOCK].dev = NULL;
+
 			led_classdev_unregister(&drv_data->led_fnlock);
 			devm_kfree(&hdev->dev, (void*) drv_data->led_fnlock.name);
 		}
 
 		if (drv_data->led_micmute.name) {
+			hid_lenovo_led_table[HID_LENOVO_LED_MICMUTE].dev = NULL;
+
 			led_classdev_unregister(&drv_data->led_micmute);
 			devm_kfree(&hdev->dev, (void*) drv_data->led_micmute.name);
 		}
 
 		if (drv_data->led_mute.name) {
+			hid_lenovo_led_table[HID_LENOVO_LED_MUTE].dev = NULL;
+
 			led_classdev_unregister(&drv_data->led_mute);
 			devm_kfree(&hdev->dev, (void*) drv_data->led_mute.name);
 		}
