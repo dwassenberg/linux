@@ -1028,6 +1028,31 @@ err:
 	return retval < 0 ? retval : 0;
 }
 
+int rmi_driver_input_configured(struct rmi_device *rmi_dev)
+{
+	struct rmi_driver_data *drv_data = dev_get_drvdata(&rmi_dev->dev);
+	struct rmi_function *entry;
+	struct rmi_function_handler *fh;
+	int retval = 0;
+
+	list_for_each_entry(entry, &drv_data->function_list, node) {
+		if (!entry || !entry->dev.driver)
+			continue;
+
+		fh = to_rmi_function_handler(entry->dev.driver);
+		if (fh && fh->input_configured) {
+			retval = fh->input_configured(entry);
+			if (retval < 0)
+				dev_err(&entry->dev,
+					"Input Configured failed with code %d.\n",
+					retval);
+		}
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rmi_driver_input_configured);
+
 static struct rmi_driver rmi_physical_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,

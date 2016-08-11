@@ -523,6 +523,13 @@ static int rmi_input_configured(struct hid_device *hdev, struct hid_input *hi)
 
 	set_bit(RMI_STARTED, &data->flags);
 
+	ret = rmi_driver_input_configured(data->xport.rmi_dev);
+	if (ret < 0) {
+		dev_err(&hdev->dev, "failed to configure transport driver\n");
+		clear_bit(RMI_STARTED, &data->flags);
+		goto exit;
+	}
+
 exit:
 	hid_device_io_stop(hdev);
 	hid_hw_close(hdev);

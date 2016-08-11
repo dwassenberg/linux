@@ -77,6 +77,7 @@ struct rmi_function_handler {
 	int (*config)(struct rmi_function *fn);
 	int (*reset)(struct rmi_function *fn);
 	int (*attention)(struct rmi_function *fn, unsigned long *irq_bits);
+	int (*input_configured)(struct rmi_function *fn);
 	int (*suspend)(struct rmi_function *fn);
 	int (*resume)(struct rmi_function *fn);
 };

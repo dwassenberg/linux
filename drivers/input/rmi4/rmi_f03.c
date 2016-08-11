@@ -196,10 +196,6 @@ static int rmi_f03_probe(struct rmi_function *fn)
 
 	dev_dbg(&fn->dev, "%d devices on PS/2 passthrough", rc);
 
-	rc = rmi_f03_register_pt(fn);
-	if (rc)
-		return rc;
-
 	return 0;
 }
 
@@ -208,6 +204,11 @@ static int rmi_f03_config(struct rmi_function *fn)
 	fn->rmi_dev->driver->set_irq_bits(fn->rmi_dev, fn->irq_mask);
 
 	return 0;
+}
+
+static int rmi_f03_input_configured(struct rmi_function *fn)
+{
+	return rmi_f03_register_pt(fn);
 }
 
 static int rmi_f03_attention(struct rmi_function *fn, unsigned long *irq_bits)
@@ -298,6 +299,7 @@ struct rmi_function_handler rmi_f03_handler = {
 	.probe = rmi_f03_probe,
 	.config = rmi_f03_config,
 	.attention = rmi_f03_attention,
+	.input_configured = rmi_f03_input_configured,
 	.remove = rmi_f03_remove,
 };
 

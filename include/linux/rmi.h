@@ -366,6 +366,7 @@ struct rmi_driver_data {
 int rmi_register_transport_device(struct rmi_transport_dev *xport);
 void rmi_unregister_transport_device(struct rmi_transport_dev *xport);
 int rmi_process_interrupt_requests(struct rmi_device *rmi_dev);
+int rmi_driver_input_configured(struct rmi_device *rmi_dev);
 
 int rmi_driver_suspend(struct rmi_device *rmi_dev);
 int rmi_driver_resume(struct rmi_device *rmi_dev);
