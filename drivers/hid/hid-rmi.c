@@ -703,10 +703,16 @@ static void rmi_remove(struct hid_device *hdev)
 {
 	struct rmi_data *hdata = hid_get_drvdata(hdev);
 
+	if (!hdata)
+		return;
+
 	clear_bit(RMI_STARTED, &hdata->flags);
 	cancel_work_sync(&hdata->reset_work);
 	cancel_work_sync(&hdata->attn_work);
-	rmi_unregister_transport_device(&hdata->xport);
+
+	if ((hdata->device_flags & RMI_DEVICE) && hdata->xport.rmi_dev)
+		rmi_unregister_transport_device(&hdata->xport);
+
 	kfifo_free(&hdata->attn_report_fifo);
 
 	hid_hw_stop(hdev);
