@@ -38,7 +38,7 @@ static void update_tpacpi_micmute_led(struct hda_codec *codec,
 	}
 }
 
-static void hda_fixup_thinkpad_acpi(struct hda_codec *codec,
+static void hda_fixup_thinkpad(struct hda_codec *codec,
 				    const struct hda_fixup *fix, int action)
 {
 	struct hda_gen_spec *spec = codec->spec;
@@ -81,7 +81,7 @@ static void hda_fixup_thinkpad_acpi(struct hda_codec *codec,
 
 #else /* CONFIG_THINKPAD_ACPI */
 
-static void hda_fixup_thinkpad_acpi(struct hda_codec *codec,
+static void hda_fixup_thinkpad(struct hda_codec *codec,
 				    const struct hda_fixup *fix, int action)
 {
 }
