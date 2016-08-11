@@ -996,6 +996,55 @@ err:
 	return ret;
 }
 
+static int lenovo_probe_tpx1cover_configure(struct hid_device *hdev)
+{
+	struct hid_report *report = hdev->report_enum[HID_OUTPUT_REPORT].report_id_hash[9];
+	struct lenovo_drvdata_tpx1cover *drv_data = hid_get_drvdata(hdev);
+
+	if (!drv_data)
+		return -ENODEV;
+
+	if (!report)
+		return -ENOENT;
+
+	report->field[0]->value[0] = 0x90;
+	report->field[0]->value[1] = 0x83;
+	hid_hw_request(hdev, report, HID_REQ_SET_REPORT);
+	hid_hw_wait(hdev);
+
+	report->field[0]->value[0] = 0x90;
+	report->field[0]->value[1] = 0x03;
+	hid_hw_request(hdev, report, HID_REQ_SET_REPORT);
+	hid_hw_wait(hdev);
+
+	report->field[0]->value[0] = 0x54;
+	report->field[0]->value[1] = 0x20;
+	hid_hw_request(hdev, report, HID_REQ_SET_REPORT);
+	hid_hw_wait(hdev);
+
+	report->field[0]->value[0] = 0x54;
+	report->field[0]->value[1] = 0x08;
+	hid_hw_request(hdev, report, HID_REQ_SET_REPORT);
+	hid_hw_wait(hdev);
+
+	report->field[0]->value[0] = 0xA0;
+	report->field[0]->value[1] = 0x02;
+	hid_hw_request(hdev, report, HID_REQ_SET_REPORT);
+	hid_hw_wait(hdev);
+
+	lenovo_led_brightness_set_tpx1cover(&drv_data->led_mute,
+		hid_lenovo_led_table[HID_LENOVO_LED_MUTE].state ? LED_FULL : LED_OFF);
+	hid_hw_wait(hdev);
+
+	lenovo_led_brightness_set_tpx1cover(&drv_data->led_micmute,
+		hid_lenovo_led_table[HID_LENOVO_LED_MICMUTE].state ? LED_FULL : LED_OFF);
+	hid_hw_wait(hdev);
+
+	lenovo_led_brightness_set_tpx1cover(&drv_data->led_fnlock, LED_FULL);
+
+	return 0;
+}
+
 static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 {
 	struct device *dev = &hdev->dev;
@@ -1108,13 +1157,7 @@ static int lenovo_probe_tpx1cover_special_functions(struct hid_device *hdev)
 
 	hid_set_drvdata(hdev, drv_data);
 
-	lenovo_led_brightness_set_tpx1cover(&drv_data->led_mute,
-		hid_lenovo_led_table[HID_LENOVO_LED_MUTE].state ? LED_FULL : LED_OFF);
-	lenovo_led_brightness_set_tpx1cover(&drv_data->led_micmute,
-		hid_lenovo_led_table[HID_LENOVO_LED_MICMUTE].state ? LED_FULL : LED_OFF);
-	lenovo_led_brightness_set_tpx1cover(&drv_data->led_fnlock, LED_FULL);
-
-	return 0;
+	return lenovo_probe_tpx1cover_configure(hdev);
 
 err_cleanup:
 	if (drv_data->led_fnlock.name) {
